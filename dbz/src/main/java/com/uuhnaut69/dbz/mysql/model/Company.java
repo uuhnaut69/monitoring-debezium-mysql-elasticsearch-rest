@@ -30,6 +30,6 @@ public class Company implements Serializable {
     private String phone;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "company_id")
+    @JoinColumn(name = "company_id", nullable = false)
     private Set<Job> jobs = new HashSet<>();
 }

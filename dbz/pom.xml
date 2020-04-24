@@ -17,6 +17,7 @@
     <properties>
         <java.version>1.8</java.version>
         <debezium.version>0.10.0.Final</debezium.version>
+        <java.faker.version>1.0.2</java.faker.version>
     </properties>
 
     <dependencies>
@@ -66,7 +67,7 @@
         <dependency>
             <groupId>com.github.javafaker</groupId>
             <artifactId>javafaker</artifactId>
-            <version>1.0.2</version>
+            <version>${java.faker.version}</version>
         </dependency>
         <dependency>
             <groupId>io.debezium</groupId>
@@ -83,6 +84,15 @@
             <groupId>io.debezium</groupId>
             <artifactId>debezium-connector-mysql</artifactId>
             <version>${debezium.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.amqp</groupId>
+            <artifactId>spring-rabbit-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
