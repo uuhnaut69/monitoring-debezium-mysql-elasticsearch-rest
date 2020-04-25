@@ -15,6 +15,15 @@ export default {
         content: process.env.npm_package_description || ''
       }
     ],
+    script: [
+      {
+        src: 'https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js'
+      },
+      {
+        src:
+          'https://cdn.jsdelivr.net/npm/@stomp/stompjs@5.0.0/bundles/stomp.umd.min.js'
+      }
+    ],
     link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }]
   },
   /*
