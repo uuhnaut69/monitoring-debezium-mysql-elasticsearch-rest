@@ -4,10 +4,11 @@ import com.uuhnaut69.dbz.common.message.MessageConstant;
 import com.uuhnaut69.dbz.common.message.MessageDTO;
 import com.uuhnaut69.dbz.elasticsearch.service.CompanyEsService;
 import com.uuhnaut69.dbz.elasticsearch.service.JobEsService;
-import io.debezium.config.Configuration;
 import io.debezium.connector.mysql.MySqlConnectorConfig;
 import io.debezium.data.Envelope;
+import io.debezium.embedded.Connect;
 import io.debezium.embedded.EmbeddedEngine;
+import io.debezium.engine.DebeziumEngine;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.connect.data.Field;
@@ -16,7 +17,10 @@ import org.apache.kafka.connect.source.SourceRecord;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PreDestroy;
+import java.io.IOException;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -35,7 +39,7 @@ public class CdcListener {
 
     private final Executor executor = Executors.newSingleThreadExecutor();
 
-    private final EmbeddedEngine engine;
+    private final DebeziumEngine<SourceRecord> engine;
 
     private final CompanyEsService companyEsService;
 
@@ -44,7 +48,7 @@ public class CdcListener {
     private final RabbitTemplate rabbitTemplate;
 
     public CdcListener(CompanyEsService companyEsService, JobEsService jobEsService, RabbitTemplate rabbitTemplate) {
-        this.engine = EmbeddedEngine.create().using(this.createConnector()).notifying(this::handleEvent).build();
+        this.engine = DebeziumEngine.create(Connect.class).using(this.createConnector()).notifying(this::handleEvent).build();
         this.companyEsService = companyEsService;
         this.jobEsService = jobEsService;
         this.rabbitTemplate = rabbitTemplate;
@@ -54,9 +58,10 @@ public class CdcListener {
         this.executor.execute(engine);
     }
 
-    public void stop() {
+    @PreDestroy
+    public void stop() throws IOException {
         if (this.engine != null) {
-            this.engine.stop();
+            this.engine.close();
         }
     }
 
@@ -69,7 +74,6 @@ public class CdcListener {
         if (sourceRecord.topic().equals(APP_CONNECTOR_1)) {
             return;
         }
-
 
         Struct sourceRecordValue = (Struct) sourceRecord.value();
         if (sourceRecordValue != null) {
@@ -106,25 +110,25 @@ public class CdcListener {
         }
     }
 
-    private Configuration createConnector() {
-        return Configuration.create()
-                .with(EmbeddedEngine.CONNECTOR_CLASS, "io.debezium.connector.mysql.MySqlConnector")
-                .with(EmbeddedEngine.OFFSET_STORAGE, "org.apache.kafka.connect.storage.FileOffsetBackingStore")
-                .with(EmbeddedEngine.OFFSET_STORAGE_FILE_FILENAME, "/Users/uuhnaut/Documents/data/dboffset.dat")
-                .with(EmbeddedEngine.OFFSET_FLUSH_INTERVAL_MS, 0)
-                .with(EmbeddedEngine.ENGINE_NAME, APP_CONNECTOR_1)
-                .with(MySqlConnectorConfig.SERVER_NAME, APP_CONNECTOR_1)
-                .with(MySqlConnectorConfig.HOSTNAME, "localhost")
-                .with(MySqlConnectorConfig.PORT, 3306)
-                .with(MySqlConnectorConfig.SERVER_ID, 223344)
-                .with(MySqlConnectorConfig.USER, "root")
-                .with(MySqlConnectorConfig.PASSWORD, "root1234")
-                .with("database.dbname", "demo")
-                .with(MySqlConnectorConfig.DATABASE_HISTORY, "io.debezium.relational.history.FileDatabaseHistory")
-                .with("database.history.file.filename", "/Users/uuhnaut/Documents/data/dbhistory.dat")
-                .with(MySqlConnectorConfig.TABLE_WHITELIST, "demo.company,demo.job")
-                .with("schemas.enable", false)
-                .with("slot.name", "demo")
-                .build();
+    private Properties createConnector() {
+        Properties properties = new Properties();
+        properties.setProperty(EmbeddedEngine.CONNECTOR_CLASS.toString(), "io.debezium.connector.mysql.MySqlConnector");
+        properties.setProperty(EmbeddedEngine.OFFSET_STORAGE.toString(), "org.apache.kafka.connect.storage.FileOffsetBackingStore");
+        properties.setProperty(EmbeddedEngine.OFFSET_STORAGE_FILE_FILENAME.toString(), "/Users/uuhnaut/Documents/data/dboffset.dat");
+        properties.setProperty(EmbeddedEngine.OFFSET_FLUSH_INTERVAL_MS.toString(), "60000");
+        properties.setProperty(EmbeddedEngine.ENGINE_NAME.toString(), APP_CONNECTOR_1);
+        properties.setProperty(MySqlConnectorConfig.SERVER_NAME.toString(), APP_CONNECTOR_1);
+        properties.setProperty(MySqlConnectorConfig.HOSTNAME.toString(), "localhost");
+        properties.setProperty(MySqlConnectorConfig.PORT.toString(), "3306");
+        properties.setProperty(MySqlConnectorConfig.SERVER_ID.toString(), "223344");
+        properties.setProperty(MySqlConnectorConfig.USER.toString(), "root");
+        properties.setProperty(MySqlConnectorConfig.PASSWORD.toString(), "root1234");
+        properties.setProperty("database.dbname", "demo");
+        properties.setProperty(MySqlConnectorConfig.DATABASE_HISTORY.toString(), "io.debezium.relational.history.FileDatabaseHistory");
+        properties.setProperty("database.history.file.filename", "/Users/uuhnaut/Documents/data/dbhistory.dat");
+        properties.setProperty(MySqlConnectorConfig.TABLE_WHITELIST.toString(), "demo.company,demo.job");
+        properties.setProperty("schemas.enable", "false");
+        properties.setProperty("slot.name", "demo");
+        return properties;
     }
 }

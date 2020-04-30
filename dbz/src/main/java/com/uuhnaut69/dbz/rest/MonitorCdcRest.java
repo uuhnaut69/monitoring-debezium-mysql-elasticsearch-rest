@@ -33,7 +33,7 @@ public class MonitorCdcRest {
     }
 
     @PostMapping("/stop")
-    public String stop() {
+    public String stop() throws IOException {
         cdcListener.stop();
         return MessageConstant.STOP_SUCCESSFULLY;
     }

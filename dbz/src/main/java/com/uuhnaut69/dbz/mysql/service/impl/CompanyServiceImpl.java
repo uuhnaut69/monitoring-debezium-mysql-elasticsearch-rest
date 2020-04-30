@@ -35,11 +35,11 @@ public class CompanyServiceImpl implements CompanyService {
         IntStream.range(0, 5).forEach(i -> {
             Set<Job> jobs = new HashSet<>();
             jobs.add(Job.builder().title(faker.job().title()).build());
-            companies.add(Company.builder()
-                    .name(faker.company().name())
-                    .phone(faker.phoneNumber().phoneNumber())
-                    .jobs(jobs)
-                    .build());
+            Company company = new Company();
+            company.setName(faker.company().name());
+            company.setPhone(faker.phoneNumber().phoneNumber());
+            company.setJobs(jobs);
+            companies.add(company);
         });
         return companyRepository.saveAll(companies);
     }
