@@ -1,4 +1,4 @@
-package com.uuhnaut69.dbz.cdc;
+package com.uuhnaut69.dbz.debezium.listener;
 
 import com.uuhnaut69.dbz.common.message.MessageConstant;
 import com.uuhnaut69.dbz.common.message.MessageDTO;

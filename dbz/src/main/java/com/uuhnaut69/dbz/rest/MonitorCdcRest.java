@@ -1,6 +1,6 @@
 package com.uuhnaut69.dbz.rest;
 
-import com.uuhnaut69.dbz.cdc.CdcListener;
+import com.uuhnaut69.dbz.debezium.listener.CdcListener;
 import com.uuhnaut69.dbz.common.message.MessageConstant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
