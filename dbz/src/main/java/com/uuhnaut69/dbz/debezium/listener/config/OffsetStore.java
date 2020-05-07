@@ -18,5 +18,5 @@ public class OffsetStore {
 
     private String offsetPayload;
 
-    private String instanceId;
+    private String engineName;
 }

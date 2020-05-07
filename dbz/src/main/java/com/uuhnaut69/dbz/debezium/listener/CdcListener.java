@@ -35,8 +35,6 @@ import static java.util.stream.Collectors.toMap;
 @Component
 public class CdcListener {
 
-    public static final String DEFAULT_INSTANCE_ID = "debezium";
-
     private static final String APP_CONNECTOR_1 = "mysql-connector-1";
 
     private final Executor executor = Executors.newSingleThreadExecutor();
