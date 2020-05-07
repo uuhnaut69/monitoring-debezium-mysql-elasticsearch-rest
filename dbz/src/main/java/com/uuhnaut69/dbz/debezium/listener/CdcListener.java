@@ -1,5 +1,7 @@
 package com.uuhnaut69.dbz.debezium.listener;
 
+import com.uuhnaut69.dbz.common.message.MessageConstant;
+import com.uuhnaut69.dbz.common.message.MessageDTO;
 import com.uuhnaut69.dbz.elasticsearch.service.CompanyEsService;
 import com.uuhnaut69.dbz.elasticsearch.service.JobEsService;
 import io.debezium.connector.mysql.MySqlConnectorConfig;
@@ -93,28 +95,26 @@ public class CdcListener {
 
             Struct source = (Struct) sourceRecordValue.get(SOURCE);
             String tableChange = source.get("table").toString();
-//            switch (tableChange) {
-//                case "company":
-//                    this.companyEsService.handleEvent(message, operation);
-//                    this.rabbitTemplate.convertAndSend("/topic/log-info", MessageDTO.getLog(MessageConstant.INFO, tableChange, message, operation));
-//                    break;
-//                case "job":
-//                    this.jobEsService.handleEvent(message, operation);
-//                    this.rabbitTemplate.convertAndSend("/topic/log-info", MessageDTO.getLog(MessageConstant.INFO, tableChange, message, operation));
-//                    break;
-//                default:
-//                    this.rabbitTemplate.convertAndSend("/topic/log-error", MessageDTO.getLog(MessageConstant.ERROR, tableChange, message, operation));
-//                    throw new IllegalStateException("Unexpected value: " + tableChange);
-//            }
+            switch (tableChange) {
+                case "company":
+                    this.companyEsService.handleEvent(message, operation);
+                    this.rabbitTemplate.convertAndSend("/topic/log-info", MessageDTO.getLog(MessageConstant.INFO, tableChange, message, operation));
+                    break;
+                case "job":
+                    this.jobEsService.handleEvent(message, operation);
+                    this.rabbitTemplate.convertAndSend("/topic/log-info", MessageDTO.getLog(MessageConstant.INFO, tableChange, message, operation));
+                    break;
+                default:
+                    this.rabbitTemplate.convertAndSend("/topic/log-error", MessageDTO.getLog(MessageConstant.ERROR, tableChange, message, operation));
+                    throw new IllegalStateException("Unexpected value: " + tableChange);
+            }
         }
     }
 
     private Properties createConnector() {
         Properties properties = new Properties();
         properties.setProperty(EmbeddedEngine.CONNECTOR_CLASS.toString(), "io.debezium.connector.mysql.MySqlConnector");
-//        properties.setProperty(EmbeddedEngine.OFFSET_STORAGE.toString(), "org.apache.kafka.connect.storage.FileOffsetBackingStore");
-        properties.setProperty(EmbeddedEngine.OFFSET_STORAGE.toString(), "com.uuhnaut69.dbz.debezium.listener.config.DbOffsetBackingStore");
-//        properties.setProperty(EmbeddedEngine.OFFSET_STORAGE_FILE_FILENAME.toString(), "/Users/uuhnaut/Documents/data/dboffset.dat");
+        properties.setProperty(EmbeddedEngine.OFFSET_STORAGE.toString(), "com.uuhnaut69.dbz.debezium.listener.config.DatabaseOffsetBackingStore");
         properties.setProperty(EmbeddedEngine.OFFSET_FLUSH_INTERVAL_MS.toString(), "60000");
         properties.setProperty(EmbeddedEngine.ENGINE_NAME.toString(), APP_CONNECTOR_1);
         properties.setProperty(MySqlConnectorConfig.SERVER_NAME.toString(), APP_CONNECTOR_1);
