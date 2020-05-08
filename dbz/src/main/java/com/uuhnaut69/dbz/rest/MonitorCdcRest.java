@@ -1,18 +1,13 @@
 package com.uuhnaut69.dbz.rest;
 
-import com.uuhnaut69.dbz.debezium.listener.CdcListener;
 import com.uuhnaut69.dbz.common.message.MessageConstant;
+import com.uuhnaut69.dbz.debezium.listener.CdcListener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.sql.Timestamp;
 
 /**
  * @author uuhnaut
@@ -27,8 +22,8 @@ public class MonitorCdcRest {
     private final CdcListener cdcListener;
 
     @PostMapping("/start")
-    public String start() {
-        cdcListener.start();
+    public String start(@RequestParam(value = "fromCheckpointTime", required = false) Timestamp fromCheckpointTime) {
+        cdcListener.start(fromCheckpointTime);
         return MessageConstant.START_SUCCESSFULLY;
     }
 
@@ -39,20 +34,17 @@ public class MonitorCdcRest {
     }
 
     @PostMapping("/reset")
-    public String resetSync() throws IOException {
-        cdcListener.stop();
-        try {
-            Files.deleteIfExists(Paths.get(MessageConstant.OFFSET_FILE_DIRECTORY));
-            Files.deleteIfExists(Paths.get(MessageConstant.HISTORY_SCHEMA_FILE_DIRECTORY));
-        } catch (NoSuchFileException e) {
-            log.error("No such file/directory exists");
-        } finally {
-            Path offsetPath = Paths.get(MessageConstant.OFFSET_FILE_DIRECTORY);
-            Path historyPath = Paths.get(MessageConstant.HISTORY_SCHEMA_FILE_DIRECTORY);
-            Files.createFile(offsetPath);
-            Files.createFile(historyPath);
-        }
-        cdcListener.start();
+    public String resetSync(@RequestParam(value = "fromCheckpointTime", required = false) String fromCheckpointTime) throws IOException {
+//        cdcListener.stop();
+//        try {
+//            Files.deleteIfExists(Paths.get(MessageConstant.HISTORY_SCHEMA_FILE_DIRECTORY));
+//        } catch (NoSuchFileException e) {
+//            log.error("No such file/directory exists");
+//        } finally {
+//            Path historyPath = Paths.get(MessageConstant.HISTORY_SCHEMA_FILE_DIRECTORY);
+//            Files.createFile(historyPath);
+//        }
+//        cdcListener.start(fromCheckpointTime);
         return MessageConstant.RESET_SUCCESSFULLY;
     }
 }

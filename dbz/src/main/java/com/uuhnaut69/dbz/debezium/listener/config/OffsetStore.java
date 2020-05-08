@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.sql.Timestamp;
+
 /**
  * @author uuhnaut
  * @project dbz-monitor
@@ -14,9 +16,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class OffsetStore {
 
+    private Integer id;
+
     private String offsetKey;
 
     private String offsetPayload;
 
     private String engineName;
+
+    private Timestamp createdDate;
 }
