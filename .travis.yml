@@ -1,0 +1,14 @@
+language: java
+
+dist: trusty
+
+branches:
+  only:
+  - master
+  
+script:
+- mvn clean package
+
+cache:
+  directories:
+  - '$HOME/.m2/repository'
