@@ -1,4 +1,4 @@
-# monitoring-debezium-mysql-elasticsearch-rest
+# monitoring-debezium-mysql-elasticsearch-rest ![build](https://travis-ci.com/uuhnaut69/monitoring-debezium-mysql-elasticsearch-rest.svg?branch=master)
 
 An example monitor embedded debezium connector via REST
 
