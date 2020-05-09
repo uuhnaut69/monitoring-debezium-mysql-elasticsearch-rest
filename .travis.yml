@@ -1,0 +1,15 @@
+language: java
+
+dist: trusty
+
+branches:
+  only:
+  - master
+  
+script:
+  - cd dbz
+  - mvn clean package
+
+cache:
+  directories:
+  - '$HOME/.m2/repository'

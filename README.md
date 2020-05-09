@@ -1,4 +1,4 @@
-# monitoring-debezium-mysql-elasticsearch-rest
+# monitoring-debezium-mysql-elasticsearch-rest ![build](https://travis-ci.com/uuhnaut69/monitoring-debezium-mysql-elasticsearch-rest.svg?branch=master)
 
 An example monitor embedded debezium connector via REST
 
@@ -15,3 +15,6 @@ An example monitor embedded debezium connector via REST
 
 - We can migration data (redo a stampshot from a time in past) that create add a column flag, and trigger debezium by write a query to update flag field with condition timestamp wanna start. Dealing with table have auto update time, we can update without changing update_time field by set update_time = update_time
 
+# TODO
+
+- [ ] Implement save schema history into database instead of file
