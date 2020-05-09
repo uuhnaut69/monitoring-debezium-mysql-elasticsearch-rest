@@ -43,7 +43,7 @@ public class DatabaseOffsetBackingStore extends MemoryOffsetBackingStore {
         jdbcTemplate.setDataSource(this.configDatasource());
         String initDb = "CREATE TABLE IF NOT EXISTS offset_store (id INTEGER NOT NULL AUTO_INCREMENT, offset_key VARCHAR (255) NOT NULL, offset_payload VARCHAR (255), engine_name VARCHAR (255) NOT NULL, created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (id)) engine=InnoDB";
         jdbcTemplate.execute(initDb);
-        if (config.originals().containsKey(CustomEmbeddedEngine.CHECK_POINT_MODE) && config.originals().get(CustomEmbeddedEngine.CHECK_POINT_MODE) != null) {
+        if (config.originals().containsKey(CustomEmbeddedEngine.CHECK_POINT_MODE)) {
             fromCheckpointTime = (String) config.originals().get(CustomEmbeddedEngine.CHECK_POINT_MODE);
         }
     }
@@ -101,7 +101,7 @@ public class DatabaseOffsetBackingStore extends MemoryOffsetBackingStore {
 
     private List<OffsetStore> findOffsetBackingStore(String engineName, String fromCheckpointTime) {
         StringBuilder sql = new StringBuilder();
-        if (fromCheckpointTime != null) {
+        if (!checkStringIsNull(fromCheckpointTime)) {
             sql.append("SELECT * FROM offset_store WHERE engine_name = '");
             sql.append(engineName);
             sql.append("'");
@@ -117,6 +117,10 @@ public class DatabaseOffsetBackingStore extends MemoryOffsetBackingStore {
         return jdbcTemplate.query(sql.toString(), (rs, rowNum) ->
                 new OffsetStore(rs.getInt("id"), rs.getString("offset_key"), rs.getString("offset_payload"), rs.getString("engine_name"), rs.getTimestamp("created_date"))
         );
+    }
+
+    private boolean checkStringIsNull(String fromCheckpointTime) {
+        return fromCheckpointTime == null || fromCheckpointTime.isEmpty();
     }
 
 }
