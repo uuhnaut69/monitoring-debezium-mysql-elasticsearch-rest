@@ -14,7 +14,7 @@ import java.sql.Timestamp;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class OffsetStore {
+public class OffsetPosition {
 
     private Integer id;
 

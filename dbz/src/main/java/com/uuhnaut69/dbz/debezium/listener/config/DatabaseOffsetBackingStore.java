@@ -9,6 +9,8 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import javax.sql.DataSource;
 import java.nio.ByteBuffer;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,8 +43,13 @@ public class DatabaseOffsetBackingStore extends MemoryOffsetBackingStore {
         engineName = (String) config.originals().get(EmbeddedEngine.ENGINE_NAME.toString());
         jdbcTemplate = new JdbcTemplate();
         jdbcTemplate.setDataSource(this.configDatasource());
-        String initDb = "CREATE TABLE IF NOT EXISTS offset_store (id INTEGER NOT NULL AUTO_INCREMENT, offset_key VARCHAR (255) NOT NULL, offset_payload VARCHAR (255), engine_name VARCHAR (255) NOT NULL, created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (id)) engine=InnoDB";
-        jdbcTemplate.execute(initDb);
+
+        String initLatestOffset = "CREATE TABLE IF NOT EXISTS latest_offset (id INTEGER NOT NULL AUTO_INCREMENT, offset_key VARCHAR (255) NOT NULL UNIQUE , offset_payload VARCHAR (255), engine_name VARCHAR (255) NOT NULL UNIQUE , created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (id)) engine=InnoDB";
+        jdbcTemplate.execute(initLatestOffset);
+
+        String initOffsetPositionSeries = "CREATE TABLE IF NOT EXISTS offset_position_series (id INTEGER NOT NULL AUTO_INCREMENT, offset_key VARCHAR (255) NOT NULL, offset_payload VARCHAR (255), engine_name VARCHAR (255) NOT NULL, created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (id)) engine=InnoDB";
+        jdbcTemplate.execute(initOffsetPositionSeries);
+
         if (config.originals().containsKey(CustomEmbeddedEngine.CHECK_POINT_MODE)) {
             fromCheckpointTime = (String) config.originals().get(CustomEmbeddedEngine.CHECK_POINT_MODE);
         }
@@ -73,18 +80,30 @@ public class DatabaseOffsetBackingStore extends MemoryOffsetBackingStore {
         for (Map.Entry<ByteBuffer, ByteBuffer> entry : raw.entrySet()) {
             String offsetKey = new String(entry.getKey().array(), UTF_8);
             String offsetPayload = new String(entry.getValue().array(), UTF_8);
-            String sql = "INSERT INTO offset_store(offset_key, offset_payload, engine_name, created_date) VALUE ( ?, ?, ?, NOW())";
-            jdbcTemplate.update(sql, offsetKey, offsetPayload, engineName);
+
+            Timestamp createdDate = Timestamp.from(Instant.now());
+            String insertOffsetPosition = "INSERT INTO offset_position_series(offset_key, offset_payload, engine_name, created_date) VALUE ( ?, ?, ?, ?)";
+            jdbcTemplate.update(insertOffsetPosition, offsetKey, offsetPayload, engineName, createdDate);
+
+            String upsertLatestOffsetPosition = "INSERT INTO latest_offset(offset_key, offset_payload, engine_name, created_date) VALUE ( ?, ?, ?, ?) ON DUPLICATE KEY UPDATE offset_payload = ? , created_date = ?";
+            jdbcTemplate.update(upsertLatestOffsetPosition, offsetKey, offsetPayload, engineName, createdDate, offsetPayload, createdDate);
         }
     }
 
     private void load() {
-        List<OffsetStore> offsetStores = findOffsetBackingStore(engineName, fromCheckpointTime);
-        if (!offsetStores.isEmpty()) {
-            data = new HashMap<>();
-            offsetStores.forEach(offsetStore -> {
-                ByteBuffer key = (offsetStore.getOffsetKey() != null) ? ByteBuffer.wrap(offsetStore.getOffsetKey().getBytes()) : null;
-                ByteBuffer value = (offsetStore.getOffsetPayload() != null) ? ByteBuffer.wrap(offsetStore.getOffsetPayload().getBytes()) : null;
+        data = new HashMap<>();
+        List<OffsetPosition> offsetPositions;
+        if (!checkStringIsNull(fromCheckpointTime)) {
+            offsetPositions = findOffsetInCheckpointMode(engineName, fromCheckpointTime);
+            LOGGER.info("Loaded Offset In Manual Mode");
+        } else {
+            offsetPositions = findOffsetInManualMode(engineName);
+            LOGGER.info("Loaded Offset In Checkpoint Mode");
+        }
+        if (!offsetPositions.isEmpty()) {
+            offsetPositions.forEach(offsetPosition -> {
+                ByteBuffer key = (offsetPosition.getOffsetKey() != null) ? ByteBuffer.wrap(offsetPosition.getOffsetKey().getBytes()) : null;
+                ByteBuffer value = (offsetPosition.getOffsetPayload() != null) ? ByteBuffer.wrap(offsetPosition.getOffsetPayload().getBytes()) : null;
                 data.put(key, value);
             });
         }
@@ -99,23 +118,26 @@ public class DatabaseOffsetBackingStore extends MemoryOffsetBackingStore {
         return dataSource;
     }
 
-    private List<OffsetStore> findOffsetBackingStore(String engineName, String fromCheckpointTime) {
+    private List<OffsetPosition> findOffsetInManualMode(String engineName) {
         StringBuilder sql = new StringBuilder();
-        if (!checkStringIsNull(fromCheckpointTime)) {
-            sql.append("SELECT * FROM offset_store WHERE engine_name = '");
-            sql.append(engineName);
-            sql.append("'");
-            sql.append(" AND created_date >= '");
-            sql.append(fromCheckpointTime);
-            sql.append("' ORDER BY created_date ASC LIMIT 1");
-        } else {
-            sql.append("SELECT * FROM offset_store WHERE engine_name = '");
-            sql.append(engineName);
-            sql.append("'");
-            sql.append(" ORDER BY created_date DESC LIMIT 1");
-        }
+        sql.append("SELECT * FROM latest_offset WHERE engine_name = '");
+        sql.append(engineName);
+        sql.append("'");
         return jdbcTemplate.query(sql.toString(), (rs, rowNum) ->
-                new OffsetStore(rs.getInt("id"), rs.getString("offset_key"), rs.getString("offset_payload"), rs.getString("engine_name"), rs.getTimestamp("created_date"))
+                new OffsetPosition(rs.getInt("id"), rs.getString("offset_key"), rs.getString("offset_payload"), rs.getString("engine_name"), rs.getTimestamp("created_date"))
+        );
+    }
+
+    private List<OffsetPosition> findOffsetInCheckpointMode(String engineName, String fromCheckpointTime) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT * FROM offset_position_series WHERE engine_name = '");
+        sql.append(engineName);
+        sql.append("'");
+        sql.append(" AND created_date >= '");
+        sql.append(fromCheckpointTime);
+        sql.append("' ORDER BY created_date ASC LIMIT 1");
+        return jdbcTemplate.query(sql.toString(), (rs, rowNum) ->
+                new OffsetPosition(rs.getInt("id"), rs.getString("offset_key"), rs.getString("offset_payload"), rs.getString("engine_name"), rs.getTimestamp("created_date"))
         );
     }
 
