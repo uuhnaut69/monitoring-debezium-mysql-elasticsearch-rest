@@ -20,9 +20,17 @@ Generate dummy data
 curl -X POST localhost:8080/companies
 ```
 
-Start connector
+<h4>Start connector</h4>
+
+Manual start
 ```http request
 curl -X POST localhost:8081/sync/start
+```
+
+Or start from checkpoint time
+
+```http request
+curl -X POST localhost:8081/sync/start?fromCheckpointTime={CheckpointTime}
 ```
 
 Stop connector
