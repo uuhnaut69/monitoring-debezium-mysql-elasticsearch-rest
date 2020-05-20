@@ -50,3 +50,5 @@ curl -X POST localhost:8081/sync/stop
 <h3>TODO</h3>
 
 - [ ] Implement save schema history into database instead of file
+- [ ] Implement handle multi connector
+Update finished
