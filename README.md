@@ -51,4 +51,3 @@ curl -X POST localhost:8081/sync/stop
 
 - [ ] Implement save schema history into database instead of file
 - [ ] Implement handle multi connector
-Update finished
