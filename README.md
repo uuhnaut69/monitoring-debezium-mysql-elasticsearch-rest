@@ -2,17 +2,25 @@
 
 An example monitor embedded debezium connector via REST
 
-- Start / Stop / Reset offset
+- Control start / stop / rest connector via Restful API
 
-- Use database to store offset data (DatabaseOffsetBackingStore)
+- Implement using database to store offset checkpoint instead of memory or file (DatabaseOffsetBackingStore)
 
-<h3>Install environment</h3>
+## Prerequisites
+
+- Java 8+
+
+- Docker
+
+- Docker-Compose
+
+## Start environment
 
 ```bash
 docker-compose up -d
 ```
 
-<h3>Running demo</h3>
+## Start api service
 
 Generate dummy data
 
@@ -20,7 +28,7 @@ Generate dummy data
 curl -X POST localhost:8080/companies
 ```
 
-<h4>Start connector</h4>
+## Start connector service
 
 Manual start
 ```http request
@@ -40,14 +48,14 @@ curl -X POST localhost:8081/sync/stop
 ```
 
 
-<h3>Notes</h3>
+## Notes
 
 - We are always dependent on the availability of the binlog after we have finished the initial snapshot. If we miss binlog entries beyond the binlog availability, we need to redo the full snapshot to gain a consistent state again.
 ( If application isn't running for sometimes, and in the meantime unprocessed binlog files get deleted on the database server (Binlog's retention / WAL's retention)).
 
 - We can migration data (redo a snapshot from a time in past) that create add a column flag, and trigger debezium by write a query to update flag field with condition timestamp wanna start. Dealing with table have auto update time, we can update without changing update_time field by set update_time = update_time
 
-<h3>TODO</h3>
+## TODO
 
 - [ ] Implement save schema history into database instead of file
 - [ ] Implement handle multi connector
