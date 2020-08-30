@@ -55,7 +55,3 @@ curl -X POST localhost:8081/sync/stop
 
 - We can migration data (redo a snapshot from a time in past) that create add a column flag, and trigger debezium by write a query to update flag field with condition timestamp wanna start. Dealing with table have auto update time, we can update without changing update_time field by set update_time = update_time
 
-## TODO
-
-- [ ] Implement save schema history into database instead of file
-- [ ] Implement handle multi connector
